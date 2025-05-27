@@ -2,54 +2,53 @@ import streamlit as st
 import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
 
-# Load Data
-st.title("Instagram Influencer & Community Detection Tool")
+st.set_page_config(page_title="Follower Network Analyzer", layout="wide")
+st.title("📊 Follower Network Analysis")
 
-st.markdown("Paste the Instagram profile URL or username below:")
-username = st.text_input("Instagram Username / URL", "")
+uploaded_file = st.file_uploader("Upload file scraped_followers (.csv)", type=["csv"])
 
-if st.button("Analyze"):
-    st.success(f"Analysis started for: {username}")
-
-    # Step 1: Load scraped followers (simulasi dari file)
+if uploaded_file is not None:
     try:
-        followers_df = pd.read_csv("scraped_followers_1.csv")
-        centrality_df = pd.read_csv("combined_centrality.csv")
-    except FileNotFoundError:
-        st.error("File data tidak ditemukan.")
-        st.stop()
+        df = pd.read_csv(uploaded_file)
+        if 'followee' in df.columns and 'follower' in df.columns:
+            st.success("✅ Format file sesuai.")
 
-    st.subheader("Centrality Metrics")
-    st.dataframe(centrality_df.head(10))
+            # Build Directed Graph
+            G = nx.DiGraph()
+            edges = list(zip(df['follower'], df['followee']))
+            G.add_edges_from(edges)
 
-    # Step 2: Create Graph
-    st.subheader("Network Graph Visualization")
-    G = nx.Graph()
+            st.subheader("🎯 Centrality Metrics")
 
-    for _, row in followers_df.iterrows():
-        G.add_edge(row['source'], row['target'])
+            degree = nx.degree_centrality(G)
+            betweenness = nx.betweenness_centrality(G)
+            closeness = nx.closeness_centrality(G)
+            try:
+                eigenvector = nx.eigenvector_centrality(G)
+            except nx.NetworkXException:
+                eigenvector = {node: 0 for node in G.nodes()}
 
-    # Plot the graph
-    plt.figure(figsize=(10, 6))
-    pos = nx.spring_layout(G, k=0.15)
-    nx.draw(G, pos, with_labels=False, node_size=20, edge_color='gray')
-    st.pyplot(plt)
+            centrality_df = pd.DataFrame({
+                "Node": list(G.nodes()),
+                "Degree": [degree[n] for n in G.nodes()],
+                "Betweenness": [betweenness[n] for n in G.nodes()],
+                "Closeness": [closeness[n] for n in G.nodes()],
+                "Eigenvector": [eigenvector[n] for n in G.nodes()]
+            }).sort_values(by="Degree", ascending=False)
 
-    # Step 3: Show Top Influencers
-    st.subheader("Top 10 Influencers")
-    top_influencers = centrality_df.sort_values("composite_centrality", ascending=False).head(10)
-    st.table(top_influencers[['username', 'composite_centrality']])
+            st.dataframe(centrality_df, use_container_width=True)
 
-    # Step 4: Clustering (dummy example using degree)
-    st.subheader("Community Detection with K-Means")
-    degrees = dict(G.degree())
-    df_deg = pd.DataFrame(list(degrees.items()), columns=["username", "degree"])
+            st.subheader("🕸️ Network Graph")
+            plt.figure(figsize=(12, 8))
+            pos = nx.spring_layout(G, seed=42)
+            nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='gray', node_size=500, font_size=8)
+            st.pyplot(plt)
 
-    km = KMeans(n_clusters=3, random_state=42).fit(df_deg[['degree']])
-    df_deg['cluster'] = km.labels_
+        else:
+            st.error("❌ Kolom harus terdiri dari 'followee' dan 'follower'.")
 
-    st.write(df_deg.head(10))
-
-    # Future: Color-code graph by cluster here using community detection
+    except Exception as e:
+        st.error(f"Terjadi error saat memproses file: {e}")
+else:
+    st.info("Silakan upload file CSV berisi data scraped follower.")
