@@ -31,7 +31,7 @@ if uploaded_file is not None:
             betweenness = nx.betweenness_centrality(G)
 
             centrality_df = pd.DataFrame({
-                "Username": list(degree.keys()),
+                "Node": list(degree.keys()),
                 "Degree": list(degree.values()),
                 "Closeness": [closeness[n] for n in degree.keys()],
                 "Betweenness": [betweenness[n] for n in degree.keys()]
