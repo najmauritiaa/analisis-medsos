@@ -31,7 +31,7 @@ if uploaded_file is not None:
             betweenness = nx.betweenness_centrality(G)
 
             centrality_df = pd.DataFrame({
-                "Node": list(degree.keys()),
+                "Username": list(degree.keys()),
                 "Degree": list(degree.values()),
                 "Closeness": [closeness[n] for n in degree.keys()],
                 "Betweenness": [betweenness[n] for n in degree.keys()]
@@ -51,7 +51,7 @@ if uploaded_file is not None:
             st.dataframe(community_df.value_counts("Community").reset_index(name="Jumlah Anggota"), use_container_width=True)
 
             # Visualisasi jaringan dengan komunitas
-            st.subheader("🕸️ Network Graph with Communities")
+            st.subheader("🕸️ Network Graph")
             pos = nx.spring_layout(G_undirected, seed=42)
             cmap = plt.get_cmap("viridis")
             num_comms = max(partition.values()) + 1
