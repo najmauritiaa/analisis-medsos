@@ -2,4 +2,9 @@ streamlit
 pandas
 networkx
 matplotlib
+seaborn
+plotly
 python-louvain
+streamlit-agraph
+numpy
+scipy
